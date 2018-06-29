@@ -74,6 +74,9 @@ const sp_string METRIC_TIME_SPENT_BACK_PRESSURE_AGGR = "__server/__time_spent_ba
 const sp_string METRIC_TIME_SPENT_BACK_PRESSURE_COMPID = "__time_spent_back_pressure_by_compid/";
 // Prefix for connection buffer's metrics
 const sp_string CONNECTION_BUFFER_BY_INSTANCEID = "__connection_buffer_by_instanceid/";
+// Prefix for connection buffer's length-related metrics
+const sp_string CONNECTION_BUFFER_LENGTH_BY_INSTANCEID =
+  "__connection_buffer_length_by_instanceid/";
 
 // TODO(mfu): Read this value from config
 const sp_int64 SYSTEM_METRICS_SAMPLE_INTERVAL_MICROSECOND = 10_s;
@@ -154,6 +157,20 @@ InstanceServer::~InstanceServer() {
     }
   }
 
+  for (auto qlmIter = connection_buffer_length_metric_map_.begin();
+        qlmIter != connection_buffer_length_metric_map_.end(); ++qlmIter) {
+      const sp_string& instance_id = qlmIter->first;
+      for (auto iter = instance_info_.begin(); iter != instance_info_.end(); ++iter) {
+        if (iter->second->instance_->instance_id() != instance_id) continue;
+        InstanceData* data = iter->second;
+        Connection* iConn = data->conn_;
+        if (!iConn) break;
+        sp_string metric_name = MakeQueueLengthCompIdMetricName(instance_id);
+        metrics_manager_client_->unregister_metric(metric_name);
+        delete qlmIter->second;
+      }
+    }
+
   metrics_manager_client_->unregister_metric("__server");
   metrics_manager_client_->unregister_metric(METRIC_TIME_SPENT_BACK_PRESSURE_AGGR);
   delete instance_server_metrics_;
@@ -190,12 +207,17 @@ sp_string InstanceServer::MakeQueueSizeCompIdMetricName(const sp_string& instanc
   return CONNECTION_BUFFER_BY_INSTANCEID + instanceid;
 }
 
+sp_string InstanceServer::MakeQueueLengthCompIdMetricName(const sp_string& instanceid) {
+  return CONNECTION_BUFFER_LENGTH_BY_INSTANCEID + instanceid;
+}
+
 void InstanceServer::UpdateQueueMetrics(EventLoop::Status) {
   for (auto itr = active_instances_.begin(); itr != active_instances_.end(); ++itr) {
     sp_int32 task_id = itr->second;
     const sp_string& instance_id = instance_info_[task_id]->instance_->instance_id();
     sp_int32 bytes = itr->first->getOutstandingBytes();
     connection_buffer_metric_map_[instance_id]->scope("bytes")->record(bytes);
+    connection_buffer_length_metric_map_[instance_id]->scope("packets")->incr();
   }
 }
 
@@ -251,6 +273,14 @@ void InstanceServer::HandleConnectionClose(Connection* _conn, NetworkErrorCode) 
       metrics_manager_client_->unregister_metric(MakeQueueSizeCompIdMetricName(instance_id));
       delete connection_buffer_metric_map_[instance_id];
       connection_buffer_metric_map_.erase(instance_id);
+    }
+
+    // Clean the connection_buffer_length_metric_map_
+    auto qlmiter = connection_buffer_length_metric_map_.find(instance_id);
+    if (qlmiter != connection_buffer_length_metric_map_.end()) {
+      metrics_manager_client_->unregister_metric(MakeQueueLengthCompIdMetricName(instance_id));
+      delete connection_buffer_length_metric_map_[instance_id];
+      connection_buffer_length_metric_map_.erase(instance_id);
     }
 
     stmgr_->HandleDeadInstance(task_id);
@@ -314,6 +344,13 @@ void InstanceServer::HandleRegisterInstanceRequest(REQID _reqid, Connection* _co
       metrics_manager_client_->register_metric(MakeQueueSizeCompIdMetricName(instance_id),
                                                queue_metric);
       connection_buffer_metric_map_[instance_id] = queue_metric;
+    }
+    if (connection_buffer_length_metric_map_.find(instance_id)
+      == connection_buffer_length_metric_map_.end()) {
+      auto queue_length_metric = new heron::common::MultiCountMetric();
+      metrics_manager_client_->register_metric(MakeQueueLengthCompIdMetricName(instance_id),
+                                               queue_length_metric);
+      connection_buffer_length_metric_map_[instance_id] = queue_length_metric;
     }
     instance_info_[task_id]->set_connection(_conn);
 
@@ -689,3 +726,4 @@ void InstanceServer::ClearCache() {
 }
 }  // namespace stmgr
 }  // namespace heron
+
