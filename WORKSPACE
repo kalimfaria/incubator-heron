@@ -268,6 +268,11 @@ maven_jar(
 )
 
 maven_jar(
+   name = "org_json",
+   artifact = "org.json:json:jar:20180130",
+)
+
+maven_jar(
    name = "org_glassfish_jersey_bundles_repackaged_jersey_guava",
    artifact = "org.glassfish.jersey.bundles.repackaged:jersey-guava:2.24",
 )
@@ -404,6 +409,16 @@ maven_jar(
 )
 
 maven_jar(
+  name = "jline_jline",
+  artifact = "jline:jline:0.9.94"
+)
+
+maven_jar(
+  name = "io_netty_netty",
+  artifact = "io.netty:netty:3.7.0.Final",
+)
+
+maven_jar(
   name = "org_apache_reef_wake",
   artifact = "org.apache.reef:wake:" + reef_version
 )
@@ -429,13 +444,13 @@ maven_jar(
 )
 
 maven_jar(
-  name = "org_apache_kafka_kafka_210",
-  artifact = "org.apache.kafka:kafka_2.10:0.8.2.1",
+  name = "org_apache_kafka_kafka_211",
+  artifact = "org.apache.kafka:kafka_2.11:0.10.0.0",
 )
 
 maven_jar(
   name = "org_apache_kafka_kafka_clients",
-  artifact = "org.apache.kafka:kafka-clients:0.8.2.1",
+  artifact = "org.apache.kafka:kafka-clients:0.10.1.0",
 )
 
 maven_jar(

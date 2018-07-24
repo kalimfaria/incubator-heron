@@ -17,9 +17,10 @@
  * under the License.
  */
 
-
 package org.apache.heron.examples.api;
 
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
@@ -30,6 +31,7 @@ import org.apache.heron.api.bolt.OutputCollector;
 import org.apache.heron.api.exception.AlreadyAliveException;
 import org.apache.heron.api.exception.InvalidTopologyException;
 import org.apache.heron.api.spout.BaseRichSpout;
+import org.apache.heron.api.spout.Scheme;
 import org.apache.heron.api.spout.SpoutOutputCollector;
 import org.apache.heron.api.state.State;
 import org.apache.heron.api.topology.IStatefulComponent;
@@ -40,6 +42,9 @@ import org.apache.heron.api.tuple.Fields;
 import org.apache.heron.api.tuple.Tuple;
 import org.apache.heron.api.tuple.Values;
 import org.apache.heron.common.basics.ByteAmount;
+import org.apache.heron.examples.api.WordCountScheme;
+import org.apache.heron.examples.api.spout.KafkaSpout;
+import org.apache.heron.examples.api.spout.KafkaSpoutConfig;
 
 /**
  * This is a topology that does simple word counts.
@@ -57,165 +62,69 @@ import org.apache.heron.common.basics.ByteAmount;
  * state variable. This way the counts are guaranteed to be accurate regardless of
  * spouts/bolt/system failures.
  */
+
 public final class StatefulWordCountTopology {
-  private StatefulWordCountTopology() {
+  static KafkaSpoutConfig sourceConfig;
+  static String SPOUT_NAME = "kafka_spout";
+  static String BOLT_NAME = "count_bolt";
+  private StatefulWordCountTopology() throws Exception {
+    // do nothing
   }
 
-  // Utils class to generate random String at given length
-  public static class RandomString {
-    private final char[] symbols;
-
-    private final Random random = new Random();
-
-    private final char[] buf;
-
-    public RandomString(int length) {
-      // Construct the symbol set
-      StringBuilder tmp = new StringBuilder();
-      for (char ch = '0'; ch <= '9'; ++ch) {
-        tmp.append(ch);
-      }
-
-      for (char ch = 'a'; ch <= 'z'; ++ch) {
-        tmp.append(ch);
-      }
-
-      symbols = tmp.toString().toCharArray();
-      if (length < 1) {
-        throw new IllegalArgumentException("length < 1: " + length);
-      }
-
-      buf = new char[length];
-    }
-
-    public String nextString() {
-      for (int idx = 0; idx < buf.length; ++idx) {
-        buf[idx] = symbols[random.nextInt(symbols.length)];
-      }
-
-      return new String(buf);
-    }
-  }
-
-  /**
-   * A spout that emits a random word. Note that we dont implement
-   * the IStatefulComponent since the spout does not really has any state
-   * worth saving. This also illustrates that a Heron topology can
-   * have some components that have empty state
+  /***
+   * examples for construct and submit a stateful wordcount topology
+   * @param args topology name
+   * @throws Exception
    */
-  public static class WordSpout extends BaseRichSpout {
-    private static final long serialVersionUID = 4322775001819135036L;
-
-    private static final int ARRAY_LENGTH = 128 * 1024;
-    private static final int WORD_LENGTH = 20;
-
-    private final String[] words = new String[ARRAY_LENGTH];
-
-    private final Random rnd = new Random(31);
-
-    private SpoutOutputCollector collector;
-
-
-    @Override
-    public void declareOutputFields(OutputFieldsDeclarer outputFieldsDeclarer) {
-      outputFieldsDeclarer.declare(new Fields("word"));
+  public static void main(String[] args) throws Exception {
+    if (args.length != 1) {
+      throw new RuntimeException("missing topology name");
     }
 
-    @Override
-    @SuppressWarnings("rawtypes")
-    public void open(Map map, TopologyContext topologyContext,
-                     SpoutOutputCollector spoutOutputCollector) {
-      RandomString randomString = new RandomString(WORD_LENGTH);
-      for (int i = 0; i < ARRAY_LENGTH; i++) {
-        words[i] = randomString.nextString();
-      }
+    final String TOPOLOGY_NAME = args[0];
 
-      collector = spoutOutputCollector;
-    }
-
-    @Override
-    public void nextTuple() {
-      int nextInt = rnd.nextInt(ARRAY_LENGTH);
-      collector.emit(new Values(words[nextInt]));
-    }
-  }
-
-  /**
-   * A bolt that counts the words that it receives
-   */
-  public static class ConsumerBolt extends BaseRichBolt
-         implements IStatefulComponent<String, Integer> {
-    private static final long serialVersionUID = -5470591933906954522L;
-
-    private OutputCollector collector;
-    private Map<String, Integer> countMap;
-    private State<String, Integer> myState;
-
-    @Override
-    public void initState(State<String, Integer> state) {
-      this.myState = state;
-    }
-
-    @Override
-    public void preSave(String checkpointId) {
-      // Nothing really since we operate out of the system supplied state
-    }
-
-    @SuppressWarnings("rawtypes")
-    public void prepare(Map map, TopologyContext topologyContext, OutputCollector outputCollector) {
-      collector = outputCollector;
-    }
-
-    @Override
-    public void execute(Tuple tuple) {
-      String key = tuple.getString(0);
-      if (myState.get(key) == null) {
-        myState.put(key, 1);
-      } else {
-        Integer val = myState.get(key);
-        myState.put(key, ++val);
-      }
-    }
-
-    @Override
-    public void declareOutputFields(OutputFieldsDeclarer outputFieldsDeclarer) {
-    }
-  }
-
-  /**
-   * Main method
-   */
-  public static void main(String[] args) throws AlreadyAliveException, InvalidTopologyException {
-    if (args.length < 1) {
-      throw new RuntimeException("Specify topology name");
-    }
+    sourceConfig = new KafkaSpoutConfig();
+    sourceConfig.scheme = new WordCountScheme();
+    sourceConfig.zkString = "zk-local-msgeventbus.smf1.twitter.com:2181";
+    sourceConfig.brokerPath = "/messaging/kafka/prod/cdl-testing-1/brokers/ids";
+    sourceConfig.groupId = "kafka-spout-" + System.currentTimeMillis();
+    sourceConfig.topic = "word-count-heron";
 
     int parallelism = 1;
-    if (args.length > 1) {
-      parallelism = Integer.parseInt(args[1]);
-    }
+
     TopologyBuilder builder = new TopologyBuilder();
-    builder.setSpout("word", new WordSpout(), parallelism);
-    builder.setBolt("consumer", new ConsumerBolt(), parallelism)
-        .fieldsGrouping("word", new Fields("word"));
+    builder.setSpout(SPOUT_NAME, new KafkaSpout(sourceConfig), parallelism);
+    builder.setBolt(BOLT_NAME, new StatefulWordCountBolt(), parallelism)
+        .fieldsGrouping(SPOUT_NAME, new Fields("word"));
+
     Config conf = new Config();
-    conf.setNumStmgrs(parallelism);
+    // set the topology to stateful
     conf.setTopologyReliabilityMode(Config.TopologyReliabilityMode.EFFECTIVELY_ONCE);
-    conf.setTopologyStatefulCheckpointIntervalSecs(20);
+    // checkpoint internal
+    conf.setTopologyStatefulCheckpointIntervalSecs(60);
+    // clean the previous saved state every time the topology is restarted
+    conf.setTopologyStatefulStartClean(true);
+    // configure number of containers
+    conf.setNumStmgrs(parallelism);
 
-    // configure component resources
-    conf.setComponentRam("word",
-        ByteAmount.fromMegabytes(ExampleResources.COMPONENT_RAM_MB * 2));
-    conf.setComponentRam("consumer",
-        ByteAmount.fromMegabytes(ExampleResources.COMPONENT_RAM_MB * 2));
+    // configure components' resource
+    conf.setComponentRam(SPOUT_NAME,
+        ByteAmount.fromGigabytes(1));
+    conf.setComponentRam(BOLT_NAME,
+        ByteAmount.fromGigabytes(1));
 
-    // configure container resources
+    // cofigure container resources
     conf.setContainerDiskRequested(
-        ExampleResources.getContainerDisk(2 * parallelism, parallelism));
+        ByteAmount.fromGigabytes(2));
     conf.setContainerRamRequested(
-        ExampleResources.getContainerRam(2 * parallelism, parallelism));
-    conf.setContainerCpuRequested(2);
+        ByteAmount.fromGigabytes(3));
+    conf.setContainerCpuRequested(3);
 
-    HeronSubmitter.submitTopology(args[0], conf, builder.createTopology());
+    HeronSubmitter.submitTopology(TOPOLOGY_NAME, conf, builder.createTopology());
+
+
   }
+
+
+
 }
