@@ -40,8 +40,8 @@ import org.apache.heron.api.tuple.Values;
 import org.apache.heron.common.basics.ByteAmount;
 
 
-public final class S4CLM {
-  private S4CLM () {
+public final class S4CLMD {
+  private S4CLMD () {
 
   }
 
@@ -216,9 +216,9 @@ public final class S4CLM {
     Config conf = new Config();
 
     // component resource configuration
-    conf.setComponentRam("spout", ByteAmount.fromMegabytes(128));
-    conf.setComponentRam("split", ByteAmount.fromMegabytes(128));
-    conf.setComponentRam("count", ByteAmount.fromMegabytes(128));
+    conf.setComponentRam("spout", ByteAmount.fromMegabytes(192));
+    conf.setComponentRam("split", ByteAmount.fromMegabytes(192));
+    conf.setComponentRam("count", ByteAmount.fromMegabytes(192));
 
     // container resource configuration
     conf.setContainerDiskRequested(ByteAmount.fromGigabytes(3));

@@ -40,8 +40,8 @@ import org.apache.heron.api.tuple.Values;
 import org.apache.heron.common.basics.ByteAmount;
 
 
-public final class S2CRC {
-  private S2CRC () {
+public final class S2CRCD {
+  private S2CRCD () {
 
   }
 

@@ -40,8 +40,8 @@ import org.apache.heron.api.tuple.Values;
 import org.apache.heron.common.basics.ByteAmount;
 
 
-public final class S2CMM {
-  private S2CMM () {
+public final class S2CMMD {
+  private S2CMMD () {
 
   }
 

@@ -40,8 +40,8 @@ import org.apache.heron.api.tuple.Values;
 import org.apache.heron.common.basics.ByteAmount;
 
 
-public final class S4C {
-  private S4C () {
+public final class S4CD {
+  private S4CD () {
 
   }
 
