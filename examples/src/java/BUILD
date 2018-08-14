@@ -18,6 +18,7 @@ java_binary(
         "@io_netty_netty//jar",
         "@jline_jline//jar",
         "@com_google_guava_guava//jar",
+        "@org_apache_commons_commons_math3//jar"
     ],
     create_executable = 0,
 )
@@ -38,7 +39,6 @@ java_binary(
         "//heron/simulator/src/java:simulator-java",
         "//third_party/java:kryo",
         "@apache_pulsar_client//jar",
-        "@org_apache_commons_commons_math3//jar"
     ],
     create_executable = 0,
 )

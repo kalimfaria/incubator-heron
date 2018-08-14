@@ -40,7 +40,7 @@ import jdk.nashorn.internal.objects.Global;
 
 public class ClusteringBolt extends BaseRichBolt
     implements IUpdatable {
-  private static Logger logger = Logger.getLogger(StatefulWordCountBolt.class.getName());
+  private static Logger logger = Logger.getLogger(ClusteringBolt.class.getName());
 
   private HashMap<String, Long> wordCountMap;
   private int taskID;
@@ -51,7 +51,7 @@ public class ClusteringBolt extends BaseRichBolt
 
   private OutputCollector outputCollector;
 
-  public StatefulWordCountBolt() {
+  public ClusteringBolt() {
     super();
 
   }

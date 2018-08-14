@@ -17,6 +17,9 @@
 package org.apache.heron.examples.api;
 
 import java.util.logging.Filter;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Random;
 
 import org.apache.heron.api.Config;
 import org.apache.heron.api.HeronSubmitter;
@@ -25,6 +28,21 @@ import org.apache.heron.api.tuple.Fields;
 import org.apache.heron.common.basics.ByteAmount;
 import org.apache.heron.examples.api.bolt.FilterBolt;
 import org.apache.heron.examples.api.bolt.ClusteringBolt;
+
+import org.apache.heron.api.bolt.BaseBasicBolt;
+import org.apache.heron.api.bolt.BasicOutputCollector;
+import org.apache.heron.api.spout.BaseRichSpout;
+import org.apache.heron.api.spout.SpoutOutputCollector;
+import org.apache.heron.api.bolt.OutputCollector;
+import org.apache.heron.api.bolt.BaseRichBolt;
+import org.apache.heron.api.topology.OutputFieldsDeclarer;
+import org.apache.heron.api.metric.GlobalMetrics;
+import org.apache.heron.api.topology.TopologyBuilder;
+import org.apache.heron.api.topology.TopologyContext;
+import org.apache.heron.api.tuple.Fields;
+import org.apache.heron.api.tuple.Tuple;
+import org.apache.heron.api.tuple.Values;
+import org.apache.heron.common.basics.ByteAmount;
 
 public final class SimilarityClustering {
 
