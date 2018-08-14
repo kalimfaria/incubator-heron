@@ -63,9 +63,9 @@ public class ClusteringBolt extends BaseRichBolt
     this.componentId = topologyContext.getThisComponentId();
     wordCountMap = new HashMap<>();
     queue = new LinkedList<DoublePoint>();
-    // we would like to create 10 clusters, with max 100 iterations to create backpressure.
+    // we would like to create 10 clusters, with max 10 iterations to create backpressure.
     // to do: consider making this a config parameter
-    clusterer = new KMeansPlusPlusClusterer<DoublePoint>(10, 10);
+    clusterer = new KMeansPlusPlusClusterer<DoublePoint>(10, 50);
   }
 
   @Override
