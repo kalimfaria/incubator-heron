@@ -44,9 +44,9 @@ import org.apache.heron.api.tuple.Tuple;
 import org.apache.heron.api.tuple.Values;
 import org.apache.heron.common.basics.ByteAmount;
 
-public final class SimilarityClustering {
+public final class SimilarityClustering2 {
 
-  private SimilarityClustering() {
+  private SimilarityClustering2() {
     // do nothing
   }
   // Utils class to generate random String at given length
