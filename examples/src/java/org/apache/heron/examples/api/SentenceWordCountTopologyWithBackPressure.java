@@ -119,6 +119,11 @@ public final class SentenceWordCountTopologyWithBackPressure {
 
     @Override
     public void nextTuple() {
+      try {
+        Thread.sleep(1);
+      } catch (InterruptedException e) {
+        throw new RuntimeException(e);
+      }
       int nextInt = rnd.nextInt(ARRAY_LENGTH);
       collector.emit(new Values(sentences[nextInt]));
     }

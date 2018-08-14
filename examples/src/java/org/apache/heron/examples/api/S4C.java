@@ -40,8 +40,8 @@ import org.apache.heron.api.tuple.Values;
 import org.apache.heron.common.basics.ByteAmount;
 
 
-public final class SentenceWordCountWithEndToEndLatency {
-  private SentenceWordCountWithEndToEndLatency() {
+public final class S2C {
+  private S2C () {
 
   }
 

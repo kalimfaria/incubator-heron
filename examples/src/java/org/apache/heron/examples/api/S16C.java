@@ -40,8 +40,8 @@ import org.apache.heron.api.tuple.Values;
 import org.apache.heron.common.basics.ByteAmount;
 
 
-public final class SentenceWordCountWithEndToEndLatency {
-  private SentenceWordCountWithEndToEndLatency() {
+public final class S2C {
+  private S2C () {
 
   }
 
@@ -225,7 +225,7 @@ public final class SentenceWordCountWithEndToEndLatency {
 //    conf.setContainerRamRequested(ByteAmount.fromGigabytes(3));
     conf.setContainerCpuRequested(2);
 
-    conf.setNumStmgrs(30);
+    conf.setNumStmgrs(8);
 
     HeronSubmitter.submitTopology(name, conf, builder.createTopology());
   }
