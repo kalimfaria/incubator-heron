@@ -216,9 +216,9 @@ public final class S4CLM {
     Config conf = new Config();
 
     // component resource configuration
-    conf.setComponentRam("spout", ByteAmount.fromMegabytes(192));
-    conf.setComponentRam("split", ByteAmount.fromMegabytes(192));
-    conf.setComponentRam("count", ByteAmount.fromMegabytes(192));
+    conf.setComponentRam("spout", ByteAmount.fromMegabytes(256));
+    conf.setComponentRam("split", ByteAmount.fromMegabytes(256));
+    conf.setComponentRam("count", ByteAmount.fromMegabytes(256));
 
     // container resource configuration
     conf.setContainerDiskRequested(ByteAmount.fromGigabytes(3));
