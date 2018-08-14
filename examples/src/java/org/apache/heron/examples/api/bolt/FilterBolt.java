@@ -48,8 +48,8 @@ public class FilterBolt extends BaseRichBolt implements IUpdatable {
     String key = "";
     Long time = -1L;
 
-    if (tuple.contains("word"))
-      key = tuple.getStringByField("word");
+    if (tuple.contains("sentence"))
+      key = tuple.getStringByField("sentence");
     if (tuple.contains("time"))
       time = tuple.getLongByField("time");
 

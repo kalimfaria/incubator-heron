@@ -156,7 +156,7 @@ public final class SimilarityClustering {
 
     builder.setSpout(SPOUT_NAME, new FastRandomSentenceSpout(), parallelism);
     builder.setBolt(FILTER_BOLT_NAME, new FilterBolt(), parallelism)
-        .fieldsGrouping(SPOUT_NAME, new Fields("word"));
+        .fieldsGrouping(SPOUT_NAME, new Fields("sentence"));
     builder.setBolt(CLUSTERING_BOLT_NAME, new ClusteringBolt(), parallelism * 2)
         .fieldsGrouping(FILTER_BOLT_NAME, new Fields("word"));
 
