@@ -38,6 +38,7 @@ java_binary(
         "//heron/simulator/src/java:simulator-java",
         "//third_party/java:kryo",
         "@apache_pulsar_client//jar",
+        "@org_apache_commons_commons_math3//jar"
     ],
     create_executable = 0,
 )
