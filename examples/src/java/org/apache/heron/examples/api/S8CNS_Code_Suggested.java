@@ -220,6 +220,7 @@ public final class S8CNS_Code_Suggested {
 //    conf.setContainerRamRequested(ByteAmount.fromGigabytes(3));
     conf.setContainerCpuRequested(6);
 
+
     conf.setNumStmgrs(15);
 
     HeronSubmitter.submitTopology(name, conf, builder.createTopology());

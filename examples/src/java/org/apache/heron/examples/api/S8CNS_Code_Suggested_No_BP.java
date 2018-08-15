@@ -40,8 +40,8 @@ import org.apache.heron.api.tuple.Values;
 import org.apache.heron.common.basics.ByteAmount;
 
 
-public final class S8CNS_Code_Suggested {
-  private S8CNS_Code_Suggested() {
+public final class S8CNS_Code_Suggested_No_BP {
+  private S8CNS_Code_Suggested_No_BP() {
 
   }
 
@@ -220,7 +220,7 @@ public final class S8CNS_Code_Suggested {
 //    conf.setContainerRamRequested(ByteAmount.fromGigabytes(3));
     conf.setContainerCpuRequested(6);
     conf.setTopologyDropTuplesUponBackpressure(true);
-    
+
     conf.setNumStmgrs(15);
 
     HeronSubmitter.submitTopology(name, conf, builder.createTopology());
