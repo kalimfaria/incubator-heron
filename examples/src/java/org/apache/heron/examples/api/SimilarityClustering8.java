@@ -46,7 +46,7 @@ import org.apache.heron.common.basics.ByteAmount;
 
 public final class SimilarityClustering8 {
 
-  private SimilarityClustering8lq() {
+  private SimilarityClustering8() {
     // do nothing
   }
   // Utils class to generate random String at given length
