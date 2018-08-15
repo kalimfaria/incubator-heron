@@ -14,21 +14,16 @@
 //  KIND, either express or implied.  See the License for the
 //  specific language governing permissions and limitations
 //  under the License.
+
+
 package org.apache.heron.examples.api;
 
-import java.util.logging.Filter;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 
 import org.apache.heron.api.Config;
 import org.apache.heron.api.HeronSubmitter;
-import org.apache.heron.api.topology.TopologyBuilder;
-import org.apache.heron.api.tuple.Fields;
-import org.apache.heron.common.basics.ByteAmount;
-import org.apache.heron.examples.api.bolt.FilterBolt;
-import org.apache.heron.examples.api.bolt.ClusteringBolt;
-
 import org.apache.heron.api.bolt.BaseBasicBolt;
 import org.apache.heron.api.bolt.BasicOutputCollector;
 import org.apache.heron.api.spout.BaseRichSpout;
@@ -44,11 +39,12 @@ import org.apache.heron.api.tuple.Tuple;
 import org.apache.heron.api.tuple.Values;
 import org.apache.heron.common.basics.ByteAmount;
 
-public final class SimilarityClustering8 {
 
-  private SimilarityClustering8lq() {
-    // do nothing
+public final class S8CNS {
+  private S8CNS () {
+
   }
+
   // Utils class to generate random String at given length
   public static class RandomString {
     private final char[] symbols;
@@ -126,55 +122,106 @@ public final class SimilarityClustering8 {
 
     @Override
     public void nextTuple() {
-      try {
-        Thread.sleep(1);
-      } catch (InterruptedException e) {
-        throw new RuntimeException(e);
-      }
       int nextInt = rnd.nextInt(ARRAY_LENGTH);
       collector.emit(new Values(sentences[nextInt], System.currentTimeMillis()));
     }
   }
-  /***
-   * examples for construct and submit a stateful wordcount topology
-   * @param args topology name
-   * @throws Exception
-   */
-  public static void main(String[] args) throws Exception {
-    if (args.length != 1) {
-      throw new RuntimeException("missing topology name");
+
+  public static class SplitSentence extends BaseRichBolt {
+    private static final long serialVersionUID = 1249629174039601217L;
+
+    private OutputCollector collector;
+
+    @Override
+    @SuppressWarnings("rawtypes")
+    public void prepare(Map conf, TopologyContext context, OutputCollector collector) {
+      this.collector = collector;
     }
 
-    final String TOPOLOGY_NAME = args[0];
-    final String SPOUT_NAME = "spout";
-    final String FILTER_BOLT_NAME = "filter_bolt";
-    final String CLUSTERING_BOLT_NAME = "clustering_bolt";
+    @Override
+    public void execute(Tuple tuple) {
+      String sentence = tuple.getString(0);
 
-    int parallelism = 10;
+      Long time = -1L;
+      if (tuple.contains("time"))
+        time = tuple.getLongByField("time");
+
+      for (String word : sentence.split("\\s+")) {
+        collector.emit(new Values(word, 1, time));
+      }
+    }
+
+    @Override
+    public void declareOutputFields(OutputFieldsDeclarer declarer) {
+      declarer.declare(new Fields("word", "count", "time"));
+    }
+  }
+
+  public static class WordCount extends BaseRichBolt {
+    private static final long serialVersionUID = -8492566595062774310L;
+
+    private Map<String, Integer> counts = new HashMap<String, Integer>();
+    private OutputCollector collector;
+
+
+    @SuppressWarnings("rawtypes")
+    public void prepare(Map map, TopologyContext topologyContext, OutputCollector aOutputCollector) {
+      this.collector = aOutputCollector;
+    }
+
+    @Override
+    public void execute(Tuple tuple) {
+
+      Long time = -1L;
+      if (tuple.contains("time"))
+        time = tuple.getLongByField("time");
+
+      long latency = (System.currentTimeMillis() - time);
+      GlobalMetrics.incrBy("end_to_end_latency", (int)latency);
+      GlobalMetrics.incr("tuple_count");
+
+      String word = tuple.getString(0);
+      Integer count = counts.get(word);
+      if (count == null) {
+        count = 0;
+      }
+      count++;
+      counts.put(word, count);
+      collector.emit(new Values(word, count));
+    }
+
+    @Override
+    public void declareOutputFields(OutputFieldsDeclarer declarer) {
+      declarer.declare(new Fields("word", "count"));
+    }
+  }
+
+  public static void main(String[] args) throws Exception {
+    String name = "fast-word-count-topology";
+    if (args != null && args.length > 0) {
+      name = args[0];
+    }
 
     TopologyBuilder builder = new TopologyBuilder();
 
-    builder.setSpout(SPOUT_NAME, new FastRandomSentenceSpout(), parallelism);
-    builder.setBolt(FILTER_BOLT_NAME, new FilterBolt(), parallelism)
-        .fieldsGrouping(SPOUT_NAME, new Fields("sentence"));
-    builder.setBolt(CLUSTERING_BOLT_NAME, new ClusteringBolt(), parallelism * 2)
-        .fieldsGrouping(FILTER_BOLT_NAME, new Fields("word"));
-
+    builder.setSpout("spout", new FastRandomSentenceSpout(), 1);
+    builder.setBolt("split", new SplitSentence(), 60).shuffleGrouping("spout");
+    builder.setBolt("count", new WordCount(), 60).fieldsGrouping("split", new Fields("word"));
 
     Config conf = new Config();
-    // configure number of containers
-    conf.setNumStmgrs(parallelism);
 
-    // configure components' resource
-    conf.setComponentRam(SPOUT_NAME, ByteAmount.fromGigabytes(1));
-    conf.setComponentRam(FILTER_BOLT_NAME, ByteAmount.fromGigabytes(1));
-    conf.setComponentRam(CLUSTERING_BOLT_NAME, ByteAmount.fromGigabytes(1));
+    // component resource configuration
+    conf.setComponentRam("spout", ByteAmount.fromMegabytes(512 * 2));
+    conf.setComponentRam("split", ByteAmount.fromMegabytes(512 * 4));
+    conf.setComponentRam("count", ByteAmount.fromMegabytes(512 * 4));
 
-    // cofigure container resources
-    conf.setContainerDiskRequested(ByteAmount.fromGigabytes(1));
-//    conf.setContainerRamRequested(ByteAmount.fromGigabytes(2));
-    conf.setContainerCpuRequested(8);
+    // container resource configuration
+    conf.setContainerDiskRequested(ByteAmount.fromGigabytes(3));
+//    conf.setContainerRamRequested(ByteAmount.fromGigabytes(3));
+    conf.setContainerCpuRequested(6);
 
-    HeronSubmitter.submitTopology(TOPOLOGY_NAME, conf, builder.createTopology());
+    conf.setNumStmgrs(15);
+
+    HeronSubmitter.submitTopology(name, conf, builder.createTopology());
   }
 }
