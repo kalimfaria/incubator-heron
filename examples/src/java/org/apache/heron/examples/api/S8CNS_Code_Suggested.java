@@ -40,8 +40,8 @@ import org.apache.heron.api.tuple.Values;
 import org.apache.heron.common.basics.ByteAmount;
 
 
-public final class S8CNS {
-  private S8CNS () {
+public final class S8CNS_Code_Suggested {
+  private S8CNS_Code_Suggested() {
 
   }
 
