@@ -206,7 +206,7 @@ public final class S8CNS_Code_Suggested {
 
     builder.setSpout("spout", new FastRandomSentenceSpout(), 1);
     builder.setBolt("split", new SplitSentence(), 60).shuffleGrouping("spout");
-    builder.setBolt("count", new WordCount(), 60).fieldsGrouping("split", new Fields("word"));
+    builder.setBolt("count", new WordCount(), 20).fieldsGrouping("split", new Fields("word"));
 
     Config conf = new Config();
 
