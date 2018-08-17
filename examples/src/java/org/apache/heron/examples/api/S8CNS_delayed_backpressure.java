@@ -123,7 +123,7 @@ public final class S8CNS_delayed_backpressure {
 
     @Override
     public void nextTuple() {
-      if (System.currentTimeMillis() > (TIME + 60 * 1000 * 30) ) {
+      if (System.currentTimeMillis() < (TIME + 60 * 1000 * 30) ) {
         try {
           Thread.sleep(2000);
         } catch (InterruptedException e) {
