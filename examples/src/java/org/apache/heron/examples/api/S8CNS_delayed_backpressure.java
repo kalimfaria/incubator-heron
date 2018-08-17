@@ -90,7 +90,7 @@ public final class S8CNS_delayed_backpressure {
     private static final int ARRAY_LENGTH = 128 * 1024;
     private static final int WORD_LENGTH = 20;
     private static final int SENTENCE_LENGTH = 10;
-    private static final long TIME = 1534467456;
+    private static final long TIME = 1534468915;
 
     // Every sentence would be words generated randomly, split by space
     private final String[] sentences = new String[ARRAY_LENGTH];
@@ -125,7 +125,7 @@ public final class S8CNS_delayed_backpressure {
     public void nextTuple() {
       if (System.currentTimeMillis() > (TIME + 60 * 1000 * 30) ) {
         try {
-          Thread.sleep(1);
+          Thread.sleep(2000);
         } catch (InterruptedException e) {
           throw new RuntimeException(e);
         }
